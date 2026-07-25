@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --font-sans is provided by next/font (Mona Sans, self-hosted) via the
+   .variable class on <html>. Do NOT redeclare it here — a :root override would
+   beat the next/font value and fall back to the system font. */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink-100 text-graphite-800 antialiased;
+  font-feature-settings: "ss01", "cv01";
+}
+
+/* Respect the OS "reduce motion" setting — neutralise CSS transitions/animations
+   and disable smooth scrolling. (Framer Motion + the 3D viewer also gate on the
+   useReducedMotion hook in JS; this covers everything else.) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::selection {
+  background: #8ecbff;
+  color: #111112;
+}
+
+/* Keyboard focus — visible, token-driven, never hidden (WCAG 2.2 AA). */
+*:focus-visible {
+  outline: 2px solid #111112;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin neutral scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f4f4ed;
+}
+::-webkit-scrollbar-thumb {
+  background: #d7d7cc;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c9c9bd;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Elevated surface — clean white, hairline border, flat shadow. No glass. */
+  .card {
+    @apply rounded-md border border-ink-400 bg-ink-50 shadow-card;
+  }
+
+  /* Small metadata pill */
+  .spec-pill {
+    @apply inline-flex items-center gap-1.5 rounded-pill border border-ink-400 bg-ink-200 px-3 py-1 text-xs font-medium text-graphite-600;
+  }
+
+  /* Section eyebrow — azure underline accent, not a coloured chip */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-graphite-900;
+  }
+  .eyebrow::before {
+    content: "";
+    @apply h-2.5 w-2.5 rounded-[2px] bg-azure;
+  }
+
+  /* Primary action — azure fill, black text (per token: surface.muted = accent) */
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-azure px-5 py-2.5 text-sm font-semibold text-graphite-900 transition-colors duration-200 ease-snap hover:bg-azure-deep active:bg-azure-deep disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  /* Strong action — solid ink */
+  .btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill bg-graphite-900 px-5 py-2.5 text-sm font-semibold text-ink-50 transition-colors duration-200 ease-snap hover:bg-graphite-800 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  /* Quiet action — hairline outline */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill border border-ink-500 bg-transparent px-5 py-2.5 text-sm font-semibold text-graphite-900 transition-colors duration-200 ease-snap hover:bg-ink-200 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+
+  .section-title {
+    @apply text-3xl font-extrabold tracking-tight text-graphite-900;
+  }
+}
+
+/* Range slider — flat, ink track + azure thumb with ink ring */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: #e3e3da;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #8ecbff;
+  cursor: pointer;
+  border: 2px solid #111112;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #8ecbff;
+  cursor: pointer;
+  border: 2px solid #111112;
+}
+
+/* Letter-roll reveal for the 3D part-name label (each char rolls up). */
+@keyframes rollUp {
+  0% {
+    opacity: 0;
+    transform: translateY(0.9em) rotateX(-90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg);
+  }
+}
+
+/* ── Route planner: brand-themed Leaflet controls (CARTO Positron basemap) ── */
+.moto-map {
+  background: #f4f4ed;
+  /* `isolation: isolate` creates a new stacking context, so Leaflet's high
+     internal z-indexes (panes up to ~700, controls 1000+) stay contained and
+     can't paint over the sticky navbar / mega-menu (z-50). Leaflet's relative
+     pane ordering is preserved inside this context. */
+  isolation: isolate;
+}
+/* Zoom control — pill, hairline border, graphite glyphs */
+.moto-map .leaflet-bar {
+  border: none;
+  border-radius: 0.5625rem;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(17, 17, 18, 0.05), 0 12px 28px -16px rgba(17, 17, 18, 0.28);
+}
+.moto-map .leaflet-bar a {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  color: #111112;
+  background: #ffffff;
+  border-bottom: 1px solid #e3e3da;
+  font-weight: 700;
+}
+.moto-map .leaflet-bar a:last-child {
+  border-bottom: none;
+}
+.moto-map .leaflet-bar a:hover {
+  background: #f4f4ed;
+  color: #111112;
+}
+/* Popups — match the card look */
+.moto-map .leaflet-popup-content-wrapper {
+  border-radius: 0.5625rem;
+  border: 1px solid #e3e3da;
+  box-shadow: 0 2px 4px rgba(17, 17, 18, 0.05), 0 12px 28px -16px rgba(17, 17, 18, 0.28);
+}
+.moto-map .leaflet-popup-content {
+  font-weight: 600;
+  font-size: 12px;
+  color: #111112;
+}
+.moto-map .leaflet-popup-tip {
+  border: 1px solid #e3e3da;
+}
+/* Attribution — quiet */
+.moto-map .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.8);
+  color: #9a9b90;
+  font-size: 10px;
+}
+.moto-map .leaflet-control-attribution a {
+  color: #727368;
+}
+/* Custom start/destination pins (DivIcon) */
+.moto-pin {
+  position: relative;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+}
+.moto-pin-tag {
+  margin-bottom: 4px;
+  border-radius: 9999px;
+  background: #111112;
+  color: #fff;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: 0 6px 16px -8px rgba(17, 17, 18, 0.5);
+}
+.moto-pin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 10px -3px rgba(17, 17, 18, 0.45);
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "slug": "yamaha",
+    "name": "Yamaha",
+    "country": "Japan",
+    "website": "https://www.yamaha-motor-bd.com",
+    "accentColor": "#1f4bd8",
+    "logoText": "YA",
+    "description": "Yamaha brings its racing-bred R-series and FZ street range to Bangladesh through ACI Motors, blending blue-streak performance with everyday reliability."
+  },
+  {
+    "slug": "honda",
+    "name": "Honda",
+    "country": "Japan",
+    "website": "https://www.hondabd.com",
+    "accentColor": "#e60012",
+    "logoText": "HO",
+    "description": "The world's largest motorcycle maker, Honda fields commuters, the CB/CBR street line, and scooters, locally assembled and sold by Bangladesh Honda."
+  },
+  {
+    "slug": "suzuki",
+    "name": "Suzuki",
+    "country": "Japan",
+    "website": "https://www.suzukibd.com",
+    "accentColor": "#e8112d",
+    "logoText": "SZ",
+    "description": "Suzuki's Gixxer family and commuters reach Bangladeshi riders via Rancon Motorbikes, known for sharp handling and dependable engineering."
+  },
+  {
+    "slug": "bajaj",
+    "name": "Bajaj",
+    "country": "India",
+    "website": "https://www.bajajauto.com",
+    "accentColor": "#003b7a",
+    "logoText": "BJ",
+    "description": "Bajaj's Pulsar and Discover lines are a fixture on Bangladeshi roads, distributed by Uttara Motors with a reputation for value and torque."
+  },
+  {
+    "slug": "tvs",
+    "name": "TVS",
+    "country": "India",
+    "website": "https://www.tvsmotor.com",
+    "accentColor": "#00529c",
+    "logoText": "TVS",
+    "description": "TVS Auto Bangladesh fields the Apache RTR sport-commuters, Raider, and a wide scooter range backed by a deep service network."
+  },
+  {
+    "slug": "hero",
+    "name": "Hero",
+    "country": "India",
+    "website": "https://www.heromotocorp.com",
+    "accentColor": "#e4002b",
+    "logoText": "HERO",
+    "description": "Hero MotoCorp, the world's largest two-wheeler brand by volume, sells fuel-efficient commuters and the Xtreme line through Niloy Motors."
+  },
+  {
+    "slug": "royal-enfield",
+    "name": "Royal Enfield",
+    "country": "India",
+    "website": "https://www.royalenfield.com",
+    "accentColor": "#2d2a26",
+    "logoText": "RE",
+    "description": "The oldest motorcycle brand in continuous production, Royal Enfield's thumping 350cc classics bring retro character to Bangladesh."
+  },
+  {
+    "slug": "ktm",
+    "name": "KTM",
+    "country": "Austria",
+    "website": "https://www.ktm.com",
+    "accentColor": "#ff6600",
+    "logoText": "KTM",
+    "description": "Ready to Race — KTM brings rally-bred, single-cylinder Duke and RC machines to Bangladesh with sharp styling and aggressive performance."
+  }
+]

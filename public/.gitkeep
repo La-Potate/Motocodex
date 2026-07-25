@@ -1,0 +1,3 @@
+# This file keeps the Next.js public/ directory present in version control and the
+# Docker build context. Static assets (favicon, images, etc.) go here and are served
+# from the site root. The Dockerfile copies this directory into the standalone runtime.

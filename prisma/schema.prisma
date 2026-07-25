@@ -1,0 +1,117 @@
+// Motocodex relational schema — Bangladesh motorcycle market edition.
+// SQLite for zero-config, ultra-fast read-heavy querying.
+// To switch to PostgreSQL: change provider to "postgresql" and update DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Manufacturer {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  country     String
+  foundedYear Int?
+  website     String
+  description String
+  accentColor String  @default("#ff5722")
+  logoText    String? // short monogram for the logo chip
+
+  bikes Bike[]
+
+  @@index([slug])
+}
+
+model Bike {
+  id   Int    @id @default(autoincrement())
+  name String
+  slug String // unique per manufacturer, not globally
+
+  manufacturerId Int
+  manufacturer   Manufacturer @relation(fields: [manufacturerId], references: [id], onDelete: Cascade)
+
+  // Categorisation
+  series   String // model family, e.g. "Pulsar", "R15", "FZS"
+  category String // e.g. "Sports", "Commuter", "Scooter", "Cruiser"
+  year     Int? // listing/model year (optional)
+  madeIn   String? // assembled / made in
+
+  // Engine & performance
+  engineCc     Int? // displacement
+  engineType   String?
+  powerHp      Float? // normalised to hp for cross-model comparison
+  powerUnit    String? // original source unit (bhp / ps / kw)
+  powerRpm     Int?
+  powerRaw     String? // exact source string, e.g. "19 bhp @ 10,000 rpm"
+  torqueNm     Float?
+  torqueRpm    Int?
+  torqueRaw    String?
+  topSpeedKph  Int?
+  mileageKmpl  Int? // company-claimed fuel economy — a headline BD metric
+  weightKg     Float? // kerb / wet weight
+  priceBdt     Int? // price in Bangladeshi Taka
+  transmission String?
+  cooling      String?
+  fuelSystem   String? // EFI / carburettor
+  startMethod  String? // electric / kick
+  boreStroke   String?
+  compression  String?
+
+  // Dimensions (mm) + ergonomics
+  lengthMm        Int?
+  widthMm         Int?
+  heightMm        Int?
+  wheelbaseMm     Int?
+  seatHeightMm    Int?
+  groundClearance Int?
+  fuelCapacityL   Float?
+
+  // Chassis
+  frontSuspension String?
+  rearSuspension  String?
+  frontBrake      String?
+  rearBrake       String?
+  abs             Boolean @default(false)
+  frontTyre       String?
+  rearTyre        String?
+
+  // REQUIRED: links back to the source page for this specific model
+  officialUrl String
+
+  // Presentation
+  tagline  String?
+  imageHue Int    @default(205) // HSL hue used by the generated gradient art
+  imageUrl String? // primary image (local webp under /public), null => gradient art
+  gallery  String? // JSON-encoded array of image paths for the gallery
+
+  createdAt DateTime @default(now())
+
+  @@unique([manufacturerId, slug])
+  @@index([category])
+  @@index([engineCc])
+  @@index([priceBdt])
+}
+
+model News {
+  id               Int     @id @default(autoincrement())
+  slug             String  @unique
+  title            String
+  excerpt          String
+  category         String
+  manufacturerSlug String? // optional link to a brand
+  bikeSlug         String? // optional link to a specific model
+  publishedAt      String // ISO date (YYYY-MM-DD)
+  readingMins      Int     @default(6)
+  heroHue          Int     @default(205)
+  tags             String // JSON-encoded string array
+  sections         String // JSON-encoded array of { heading, body }
+  sources          String // JSON-encoded array of { title, url }
+
+  @@index([publishedAt])
+  @@index([bikeSlug])
+}
