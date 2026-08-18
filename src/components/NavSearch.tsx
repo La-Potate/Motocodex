@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { asset } from "@/lib/basePath";
 
 type Result = {
   name: string;
   manufacturer: string;
   href: string;
+  category?: string | null;
   engineCc: number | null;
   powerHp: number | null;
 };
 
 /**
- * Global navbar search. Debounced calls to the internal /api/bikes?q= endpoint
- * (which returns only minimal public fields) and shows a results dropdown.
+ * Global navbar search. Loads a small prebuilt index once (the site is a static
+ * export, so there is no query endpoint to call) and filters it in the browser,
+ * which also stops the old behaviour of refetching on every keystroke.
  * Compact button on small screens that expands; inline input on desktop.
  */
 export function NavSearch() {
@@ -27,8 +30,17 @@ export function NavSearch() {
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seq = useRef(0);
 
+  // Load the index once, lazily, on first interaction.
+  const index = useRef<Result[] | null>(null);
+  const loadIndex = async () => {
+    if (index.current) return index.current;
+    const res = await fetch(asset("/search-index.json"));
+    index.current = (await res.json()) as Result[];
+    return index.current;
+  };
+
   useEffect(() => {
-    const term = q.trim();
+    const term = q.trim().toLowerCase();
     if (debounce.current) clearTimeout(debounce.current);
     if (term.length < 2) {
       setResults([]);
@@ -39,10 +51,15 @@ export function NavSearch() {
       const id = ++seq.current;
       setLoading(true);
       try {
-        const res = await fetch(`/api/bikes?q=${encodeURIComponent(term)}`);
-        const data = await res.json();
+        const all = await loadIndex();
         if (id !== seq.current) return;
-        setResults(data.results ?? []);
+        setResults(
+          all
+            .filter((b) =>
+              `${b.manufacturer} ${b.name} ${b.category ?? ""}`.toLowerCase().includes(term)
+            )
+            .slice(0, 12)
+        );
         setActive(-1);
         setOpen(true);
       } catch {
@@ -50,7 +67,7 @@ export function NavSearch() {
       } finally {
         if (id === seq.current) setLoading(false);
       }
-    }, 220);
+    }, 120);
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
     };

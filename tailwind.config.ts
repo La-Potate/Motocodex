@@ -22,6 +22,7 @@ const config: Config = {
         graphite: {
           900: "#111112", // text.tertiary — strongest headings
           800: "#282c20", // text.primary — body
+          700: "#3e4139", // body on tinted fills
           600: "#55564c", // secondary text
           500: "#727368", // muted / captions
           400: "#9a9b90", // faint

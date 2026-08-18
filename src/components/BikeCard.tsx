@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 import { bdt } from "@/lib/format";
+import { asset } from "@/lib/basePath";
 
 export type BikeCardData = {
   name: string;
@@ -21,7 +23,7 @@ export type BikeCardData = {
 };
 
 export function BikeCard({ bike, index = 0 }: { bike: BikeCardData; index?: number }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const headline =
     bike.powerHp != null ? `${bike.powerHp} hp` : bike.engineCc != null ? `${bike.engineCc} cc` : "—";
 
@@ -48,7 +50,7 @@ export function BikeCard({ bike, index = 0 }: { bike: BikeCardData; index?: numb
 
             {bike.imageUrl ? (
               <Image
-                src={bike.imageUrl}
+                src={asset(bike.imageUrl)}
                 alt={`${bike.manufacturerName} ${bike.name}`}
                 fill
                 sizes="(max-width:768px) 50vw, 25vw"

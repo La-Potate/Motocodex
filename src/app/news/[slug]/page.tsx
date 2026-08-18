@@ -6,6 +6,8 @@ import { getNews, getNewsBySlug, getBike } from "@/lib/queries";
 import { bikeGradient, bdt } from "@/lib/format";
 import { Reveal } from "@/components/Reveal";
 import { ArticleBody } from "@/components/ArticleBody";
+import { serializeJsonLd } from "@/components/JsonLd";
+import { asset } from "@/lib/basePath";
 
 type Params = { slug: string };
 const SITE = process.env.SITE_URL ?? "https://motocodex.net";
@@ -65,7 +67,7 @@ export default async function NewsArticle(props: { params: Promise<Params> }) {
 
   return (
     <article>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
 
       {/* Hero band */}
       <div className="relative overflow-hidden border-b border-ink-400" style={{ background: bikeGradient(a.heroHue) }}>
@@ -125,7 +127,7 @@ export default async function NewsArticle(props: { params: Promise<Params> }) {
                 <div className="relative h-24" style={{ background: bikeGradient(bike.imageHue) }}>
                   {bike.imageUrl && (
                     <Image
-                      src={bike.imageUrl}
+                      src={asset(bike.imageUrl)}
                       alt={`${bike.manufacturer.name} ${bike.name}`}
                       fill
                       sizes="300px"

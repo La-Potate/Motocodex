@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 export function Reveal({
   children,
@@ -13,7 +14,7 @@ export function Reveal({
   y?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
 
   // Reduced motion → render in place, no scroll-triggered transform/fade.
   if (reduce) return <div className={className}>{children}</div>;

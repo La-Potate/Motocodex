@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
+import { asset } from "@/lib/basePath";
 
 // Client-only: the WebGL canvas must never render on the server.
 const ModelViewer = dynamic(() => import("./ModelViewer"), {
@@ -12,8 +14,7 @@ const ModelViewer = dynamic(() => import("./ModelViewer"), {
   loading: () => <ShowcasePoster label="Loading 3D…" />,
 });
 
-// Lightweight placeholder shown before the (heavy) 3D canvas mounts, and as the
-// permanent visual for reduced-motion users (who never load WebGL).
+// Lightweight placeholder shown before the (heavy) 3D canvas mounts.
 function ShowcasePoster({ label }: { label?: string }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-3">
@@ -58,13 +59,14 @@ export function Hero({
 }) {
   const [q, setQ] = useState("");
   const router = useRouter();
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
 
   // Defer the 2.2 MB WebGL model until the page is painted & idle, so it never
-  // blocks LCP. Reduced-motion users keep the static poster (no WebGL at all).
+  // blocks LCP. The bike is the hero's subject rather than decoration, so a
+  // reduced-motion preference suppresses its auto-rotation (see ModelViewer)
+  // rather than withholding the model.
   const [show3d, setShow3d] = useState(false);
   useEffect(() => {
-    if (reduce) return;
     const w = window as unknown as { requestIdleCallback?: (cb: () => void) => number };
     const t =
       typeof w.requestIdleCallback === "function"
@@ -77,7 +79,7 @@ export function Hero({
         clearTimeout(t as number);
       }
     };
-  }, [reduce]);
+  }, []);
 
   const onSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,12 +165,12 @@ export function Hero({
 
         {/* Free-standing 3D showcase — transparent canvas, centred in its column */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96 }}
+          initial={reduce ? false : { opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduce ? { duration: 0 } : { duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="relative h-[22rem] cursor-grab touch-none self-stretch active:cursor-grabbing sm:h-[28rem] lg:h-full"
         >
-          {show3d ? <ModelViewer src="/models/h2r.glb" /> : <ShowcasePoster />}
+          {show3d ? <ModelViewer src={asset("/models/h2r.glb")} /> : <ShowcasePoster />}
         </motion.div>
       </div>
     </section>

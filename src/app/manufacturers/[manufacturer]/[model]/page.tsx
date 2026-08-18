@@ -8,6 +8,7 @@ import { Reveal } from "@/components/Reveal";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { JsonLd } from "@/components/JsonLd";
 import { bikeProductSchema, bikeFaqs, faqSchema, breadcrumbSchema } from "@/lib/seo";
+import { asset } from "@/lib/basePath";
 
 type Params = { manufacturer: string; model: string };
 
@@ -36,7 +37,7 @@ export async function generateMetadata(props: { params: Promise<Params> }): Prom
       title,
       description: `${bike.manufacturer.name} ${bike.name}: ${bits.join(", ")}.`,
       type: "website",
-      ...(bike.imageUrl ? { images: [{ url: bike.imageUrl }] } : {}),
+      ...(bike.imageUrl ? { images: [{ url: asset(bike.imageUrl) }] } : {}),
     },
   };
 }
@@ -161,7 +162,7 @@ export default async function BikePage(props: { params: Promise<Params> }) {
               <div className="relative flex items-center justify-center">
                 {bike.imageUrl ? (
                   <Image
-                    src={bike.imageUrl}
+                    src={asset(bike.imageUrl)}
                     alt={`${bike.manufacturer.name} ${bike.name}`}
                     width={640}
                     height={480}

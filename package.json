@@ -7,11 +7,13 @@
     "dev": "next dev -p 9001",
     "build": "prisma generate && next build",
     "start": "next start -p 9001",
-    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "prisma db push && tsx prisma/seed.ts"
+    "db:setup": "prisma db push && tsx prisma/seed.ts",
+    "build:static": "prisma generate && node scripts/build-static.mjs",
+    "serve:static": "npx --yes serve out -l 9002"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

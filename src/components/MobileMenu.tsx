@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 import { NavSearch } from "./NavSearch";
 
 const LINKS = [
@@ -21,7 +22,7 @@ const LINKS = [
  */
 export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
 
   // Lock body scroll while open.
   useEffect(() => {

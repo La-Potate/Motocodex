@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { MegaMenu, type MegaMenuData } from "./MegaMenu";
 import { NavSearch } from "./NavSearch";
 import { MobileMenu } from "./MobileMenu";
+import { asset } from "@/lib/basePath";
 
 /**
  * Transparent-on-top header that morphs into a floating, frosted pill once the
@@ -54,7 +55,7 @@ export function NavbarChrome({ data }: { data: MegaMenuData }) {
         >
           <Link href="/" className="group flex items-center" aria-label="Motocodex home">
             <Image
-              src="/logo.png"
+              src={asset("/logo.png")}
               alt="Motocodex"
               width={994}
               height={240}

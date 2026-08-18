@@ -2,13 +2,15 @@
 
 A modern, heavily-animated **motorcycle price, specifications & comparison directory for Bangladesh**. Built for performance, SEO, and source-code protection via Server-Side Rendering.
 
-- **Framework:** Next.js 14 (App Router, RSC + SSR/SSG)
+- **Framework:** Next.js 16 (App Router, RSC + SSG)
 - **Styling:** Tailwind CSS
 - **Animation:** Framer Motion (mega menu, page transitions, hero)
 - **Database:** SQLite via Prisma (swap to PostgreSQL by changing one line)
-- **Deploy:** Dockerized, standalone build, exposed on **http://localhost:9001**
+- **Deploy:** static export to GitHub Pages, or a Dockerised standalone server on **http://localhost:9001**
 
-The dataset covers **22 brands and 224 currently-available models** in the Bangladesh market, with prices in **BDT (৳)** and full specs — engine, power, torque, mileage, weight, dimensions, brakes/ABS, suspension and tyres.
+The seed data currently covers **8 brands and 19 models** (all Yamaha) plus **40 ownership guides**, with prices in **BDT (৳)** and full specs — engine, power, torque, mileage, weight, dimensions, brakes/ABS, suspension and tyres.
+
+> **Dataset status.** The other seven brands are seeded as manufacturers but carry no models yet, so their pages render an empty range. 34 of the 40 guides reference bikes that are not in the catalogue, so those articles render without their linked model. Adding the missing models to `data/seeds/bikes.json` resolves both.
 
 ---
 
@@ -19,6 +21,33 @@ docker compose up --build
 ```
 
 Then open **http://localhost:9001**. The image builds the production app, creates the SQLite DB, and seeds it from `data/seeds/*.json` at build time — no runtime setup needed.
+
+## Deploy to GitHub Pages
+
+```bash
+npm run build:static     # writes ./out
+npm run serve:static     # preview it locally
+```
+
+Push to `main` and the workflow in `.github/workflows/deploy.yml` builds and
+publishes automatically — enable it once under **Settings → Pages → Source →
+GitHub Actions**. The workflow derives the URLs from the repository itself, so a
+project repo is served from `/<repo>/` and a `<user>.github.io` repo from the
+domain root; nothing needs editing by hand.
+
+Building by hand needs both variables, because a project page lives under a path
+prefix that must be baked into every asset URL at build time:
+
+```bash
+NEXT_PUBLIC_BASE_PATH=/<repo> SITE_URL=https://<user>.github.io/<repo> npm run build:static
+```
+
+**What the static target gives up.** GitHub Pages serves files, not a server, so
+`npm run build:static` drops the three `/api/*` route handlers and the
+middleware in `src/proxy.ts` (both are restored automatically after the build,
+and the Docker target still uses them). Navbar search reads a prebuilt
+`search-index.json` instead of calling the API, and `/compare` is pre-rendered
+for every combination of 2–4 bikes rather than resolved per request.
 
 ## Local development
 

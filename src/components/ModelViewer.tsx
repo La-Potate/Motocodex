@@ -1,10 +1,28 @@
 "use client";
 
 import { Suspense, useMemo, useRef, useState } from "react";
+import { asset } from "@/lib/basePath";
 import { useReducedMotion } from "framer-motion";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Environment, ContactShadows, Center, useGLTF, Preload } from "@react-three/drei";
-import { Group, Mesh, Vector3, MathUtils, Box3, MeshStandardMaterial, Color } from "three";
+import {
+  OrbitControls,
+  Environment,
+  Lightformer,
+  ContactShadows,
+  Center,
+  useGLTF,
+  Preload,
+} from "@react-three/drei";
+import {
+  Group,
+  Mesh,
+  Vector3,
+  MathUtils,
+  Box3,
+  MeshStandardMaterial,
+  MeshPhysicalMaterial,
+  Color,
+} from "three";
 
 /**
  * Reusable 3D model viewer (react-three-fiber + drei) with a SIMPLE exploded
@@ -23,7 +41,7 @@ import { Group, Mesh, Vector3, MathUtils, Box3, MeshStandardMaterial, Color } fr
  * Client-only: import via next/dynamic with { ssr: false }.
  */
 
-const DRACO_PATH = "/draco/";
+const DRACO_PATH = asset("/draco/");
 const WHEEL_RE = /rim|tyre|tire|wheel|disc|brake/i;
 const HILITE = new Color("#8ecbff"); // hovered-part emissive tint
 const IDLE_SCALE = 1.35; // bike is larger when assembled, eases to 1 when exploded
@@ -128,7 +146,29 @@ function Model({
 }) {
   const { scene } = useGLTF(src, DRACO_PATH);
   const { camera } = useThree();
+  const invalidate = useThree((s) => s.invalidate);
   const parts = useMemo(() => buildParts(scene as Group), [scene]);
+
+  // The screen material ships with transmissionFactor = 1, which makes three.js
+  // re-render the whole scene into a transmission buffer every frame — for a
+  // 936-triangle part. Ordinary alpha blending is visually near-identical here
+  // and removes an entire render pass.
+  useMemo(() => {
+    scene.traverse((o) => {
+      const m = o as Mesh;
+      if (!m.isMesh) return;
+      const mats = Array.isArray(m.material) ? m.material : [m.material];
+      for (const mat of mats) {
+        const phys = mat as MeshPhysicalMaterial;
+        if (phys && typeof phys.transmission === "number" && phys.transmission > 0) {
+          phys.transmission = 0;
+          phys.transparent = true;
+          phys.opacity = 0.34;
+          phys.needsUpdate = true;
+        }
+      }
+    });
+  }, [scene]);
   const progress = useRef(0);
   const wasExploded = useRef(false);
   const groupRef = useRef<Group>(null);
@@ -138,8 +178,8 @@ function Model({
 
     // Bike is larger when idle/assembled, eases down to base size when exploded
     // so the spread parts fit inside the canvas.
+    const targetScale = exploded ? 1 : IDLE_SCALE;
     if (groupRef.current) {
-      const targetScale = exploded ? 1 : IDLE_SCALE;
       const gs = MathUtils.lerp(groupRef.current.scale.x, targetScale, k);
       groupRef.current.scale.setScalar(gs);
     }
@@ -181,6 +221,19 @@ function Model({
           k
         );
       }
+    }
+
+    // Under "demand" frameloop nothing renders unless we ask, so keep asking
+    // while the explode/scale transition is still moving, then let it go quiet.
+    const target = exploded ? 1 : 0;
+    const moving =
+      Math.abs(progress.current - target) > 0.001 ||
+      Math.abs((groupRef.current?.scale.x ?? targetScale) - targetScale) > 0.001;
+    if (moving) {
+      invalidate();
+    } else {
+      progress.current = target;
+      groupRef.current?.scale.setScalar(targetScale);
     }
   });
 
@@ -264,15 +317,40 @@ function Scene({
   return (
     <>
       <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 6, 5]} intensity={1.1} castShadow />
+      <directionalLight position={[5, 6, 5]} intensity={1.1} />
       <directionalLight position={[-5, 3, -4]} intensity={0.5} />
-      <Environment preset="city" />
+
+      {/*
+        `preset="city"` streams a 1.5 MB HDR from a third-party CDN on every
+        load. These lightformers are baked into a small cube map once, on the
+        GPU, with no network request — the carbon and clearcoat still get the
+        broad highlights they need to read as metal.
+      */}
+      <Environment resolution={64} frames={1}>
+        <color attach="background" args={["#101014"]} />
+        <Lightformer intensity={2.4} position={[0, 3, 2]} scale={[9, 4, 1]} />
+        <Lightformer intensity={1.2} position={[-4, 1, -2]} scale={[6, 3, 1]} color="#cfe2ff" />
+        <Lightformer intensity={0.9} position={[4, 0.5, 2]} scale={[5, 3, 1]} color="#ffeeda" />
+        <Lightformer intensity={0.7} position={[0, -2, -3]} scale={[8, 3, 1]} color="#9fb4c9" />
+      </Environment>
 
       <group onPointerOver={over} onPointerMove={move} onPointerOut={out}>
         <Model src={src} exploded={exploded} hoveredMesh={hoveredMesh} />
       </group>
 
-      <ContactShadows position={[0, groundY, 0]} opacity={0.4} scale={6} blur={2.6} far={4} />
+      {/*
+        Baked once rather than re-rendered every frame (drei's default). Orbit
+        moves the camera, not the bike, so the shadow stays correct as you turn.
+      */}
+      <ContactShadows
+        position={[0, groundY, 0]}
+        opacity={0.4}
+        scale={6}
+        blur={2.6}
+        far={4}
+        frames={1}
+        resolution={256}
+      />
     </>
   );
 }
@@ -314,10 +392,21 @@ export default function ModelViewer({ src, controls = true, className }: ModelVi
     <>
       <Canvas
         className={className}
-        shadows
-        dpr={Math.min(2, typeof window !== "undefined" ? window.devicePixelRatio : 1)}
+        // No `shadows`: the directional shadow map was a second full pass every
+        // frame, and ContactShadows already grounds the bike.
+        // Capped at 1.5 — at DPR 2 this canvas shades ~1.8x more pixels for a
+        // difference you cannot see on a model this size.
+        dpr={[1, 1.5]}
+        // With auto-rotate off there is nothing to animate at rest, so render on
+        // demand and let the GPU idle instead of burning 60 fps on a still image.
+        frameloop={reduce ? "demand" : "always"}
         camera={{ position: [3.4, 1.3, 4.2], fov: 34 }}
-        gl={{ antialias: true, preserveDrawingBuffer: false, alpha: true }}
+        gl={{
+          antialias: true,
+          preserveDrawingBuffer: false,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
         style={{ background: "transparent" }}
         onPointerEnter={onCanvasEnter}
         onPointerLeave={onCanvasLeave}
@@ -351,4 +440,4 @@ export default function ModelViewer({ src, controls = true, className }: ModelVi
   );
 }
 
-useGLTF.preload("/models/h2r.glb", DRACO_PATH);
+useGLTF.preload(asset("/models/h2r.glb"), DRACO_PATH);

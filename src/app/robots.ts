@@ -1,6 +1,10 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/seo";
 
-const BASE = process.env.SITE_URL ?? "https://motocodex.net";
+// Static export has no server, so these must be emitted at build time.
+export const dynamic = "force-static";
+
+const BASE = SITE_URL;
 
 export default function robots(): MetadataRoute.Robots {
   return {

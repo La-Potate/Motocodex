@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getManufacturers } from "@/lib/queries";
+import { asset } from "@/lib/basePath";
 
 export async function SiteFooter() {
   const manufacturers = await getManufacturers();
@@ -9,7 +10,7 @@ export async function SiteFooter() {
       <div className="container-page grid gap-10 py-14 md:grid-cols-4">
         <div className="md:col-span-1">
           <Link href="/" className="inline-flex items-center" aria-label="Motocodex home">
-            <Image src="/logo.png" alt="Motocodex" width={994} height={240} className="h-9 w-auto" />
+            <Image src={asset("/logo.png")} alt="Motocodex" width={994} height={240} className="h-9 w-auto" />
           </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-graphite-600">
             Bangladesh&apos;s modern motorcycle specifications and comparison directory. Engine, power,

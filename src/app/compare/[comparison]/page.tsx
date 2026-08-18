@@ -2,19 +2,29 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
-import { resolveBikeToken, type BikeWithManufacturer } from "@/lib/queries";
+import { resolveBikeToken, getAllBikes, type BikeWithManufacturer } from "@/lib/queries";
 import { bdt, num, powerToWeight, bikeGradient } from "@/lib/format";
 import { Reveal } from "@/components/Reveal";
 import { JsonLd } from "@/components/JsonLd";
 import { webPageSchema, breadcrumbSchema } from "@/lib/seo";
+import { asset } from "@/lib/basePath";
 
 type Params = { comparison: string };
 
 function parseTokens(comparison: string): string[] {
-  return decodeURIComponent(comparison)
+  // A malformed percent-sequence in the URL (e.g. "%e0%a4%a") makes
+  // decodeURIComponent throw a URIError, which would surface as a 500.
+  let raw = comparison;
+  try {
+    raw = decodeURIComponent(comparison);
+  } catch {
+    /* keep the undecoded segment; an unresolvable token yields a 404 below */
+  }
+  const seen = new Set<string>();
+  return raw
     .split("-vs-")
     .map((t) => t.trim())
-    .filter(Boolean);
+    .filter((t) => t && !seen.has(t) && seen.add(t));
 }
 
 export async function generateMetadata(props: { params: Promise<Params> }): Promise<Metadata> {
@@ -28,6 +38,51 @@ export async function generateMetadata(props: { params: Promise<Params> }): Prom
     description: `Side-by-side specification comparison: ${names}. Engine, power, torque, mileage, weight and price (৳).`,
     alternates: { canonical: `/compare/${params.comparison}` },
   };
+}
+
+
+/**
+ * A static export can only serve URLs that exist as files, so every reachable
+ * comparison is pre-rendered here. ComparePicker sorts its tokens before
+ * navigating, so only the sorted combination of any given set is reachable —
+ * that keeps this to C(n,k) pages instead of every permutation, and gives each
+ * comparison a single canonical URL.
+ *
+ * The count grows combinatorially, so it is capped: with a large catalogue the
+ * deeper sets are dropped rather than emitting millions of pages. Pairs are
+ * always included.
+ */
+function combinations<T>(items: T[], k: number): T[][] {
+  const out: T[][] = [];
+  const pick = (start: number, acc: T[]) => {
+    if (acc.length === k) {
+      out.push([...acc]);
+      return;
+    }
+    for (let i = start; i < items.length; i++) {
+      acc.push(items[i]);
+      pick(i + 1, acc);
+      acc.pop();
+    }
+  };
+  pick(0, []);
+  return out;
+}
+
+const MAX_COMPARE_TOKENS = 4; // must match MAX in ComparePicker
+const MAX_COMPARE_PAGES = Number(process.env.COMPARE_MAX_PAGES ?? 6000);
+
+export async function generateStaticParams() {
+  const bikes = await getAllBikes();
+  const tokens = bikes.map((b) => `${b.manufacturer.slug}-${b.slug}`).sort();
+
+  const params: { comparison: string }[] = [];
+  for (let k = 2; k <= MAX_COMPARE_TOKENS; k++) {
+    const combos = combinations(tokens, k);
+    if (k > 2 && params.length + combos.length > MAX_COMPARE_PAGES) break;
+    for (const c of combos) params.push({ comparison: c.join("-vs-") });
+  }
+  return params;
 }
 
 // Spec rows: higher/lower "better" drives the highlight.
@@ -116,7 +171,7 @@ export default async function ComparePage(props: { params: Promise<Params> }) {
                       <div className="relative h-20" style={{ background: bikeGradient(b.imageHue) }}>
                         {b.imageUrl && (
                           <Image
-                            src={b.imageUrl}
+                            src={asset(b.imageUrl)}
                             alt={`${b.manufacturer.name} ${b.name}`}
                             fill
                             sizes="(max-width:768px) 33vw, 200px"

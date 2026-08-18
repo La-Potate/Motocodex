@@ -29,3 +29,10 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# generated at build time by scripts/build-search-index.mjs
+/public/search-index.json
+
+# transient rename targets used by scripts/build-static.mjs
+/src/proxy.ts.disabled
+/src/app/_api.disabled/

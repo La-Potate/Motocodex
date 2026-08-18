@@ -183,6 +183,22 @@ async function main() {
   const newsPath = join(process.cwd(), "data", "seeds", "news.json");
   if (existsSync(newsPath)) {
     const news = JSON.parse(readFileSync(newsPath, "utf-8")) as NewsSeed[];
+
+    // News rows carry soft references (no FK), so a typo or a model that was
+    // never seeded silently drops the article's cross-link card. Surface them.
+    const bikeKeys = new Set(bikes.map((b) => `${b.manufacturer}/${b.slug}`));
+    const dangling = news.filter(
+      (n) => n.bikeSlug && !bikeKeys.has(`${n.manufacturerSlug}/${n.bikeSlug}`)
+    );
+    if (dangling.length) {
+      console.warn(
+        `WARNING: ${dangling.length}/${news.length} news articles reference a bike that is not in bikes.json — ` +
+          `their "view specs" card will not render. Affected: ${dangling
+            .map((n) => `${n.manufacturerSlug}/${n.bikeSlug}`)
+            .join(", ")}`
+      );
+    }
+
     for (const n of news) {
       await prisma.news.create({
         data: {

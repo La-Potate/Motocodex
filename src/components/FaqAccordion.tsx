@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 export type FaqItem = { q: string; a: string };
 
 export function FaqAccordion({ items }: { items: FaqItem[] }) {
   const [open, setOpen] = useState<number | null>(0);
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   return (
     <div className="mx-auto max-w-3xl divide-y divide-ink-400 overflow-hidden rounded-md border border-ink-400 bg-ink-50 shadow-card">
       {items.map((item, i) => {

@@ -100,6 +100,7 @@ export default async function ManufacturerPage(props: { params: Promise<Params> 
                 powerHp: b.powerHp,
                 priceBdt: b.priceBdt,
                 mileageKmpl: b.mileageKmpl,
+                imageUrl: b.imageUrl,
                 imageHue: b.imageHue,
                 tagline: b.tagline,
               }}

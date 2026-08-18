@@ -21,7 +21,8 @@ services:
     image: cloudflare/cloudflared:latest
     container_name: motocodex-cloudflared
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token eyJhIjoiZjYzZmFmYzgyMjgwYmJhNDg5ZGZiZGI2NTFmMGFmMDUiLCJ0IjoiOGMzZTQ4MGMtN2FiYy00MzIzLThkMzYtMDk1MzM0MjlkMzI5IiwicyI6Ik1UY3lORE0zT1dJdE0ySmtNaTAwTkRGa0xUa3daRGN0TTJGaVltTTFOV0l6TTJGbSJ9
+    # Token comes from CLOUDFLARE_TUNNEL_TOKEN in the gitignored root .env file.
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN:?set CLOUDFLARE_TUNNEL_TOKEN in .env}
     depends_on:
       - motocodex
     networks:

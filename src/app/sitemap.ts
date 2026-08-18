@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next";
 import { getAllBikes, getManufacturers, getNews } from "@/lib/queries";
+import { SITE_URL } from "@/lib/seo";
 
-export const revalidate = 3600;
+// Static export has no server, so the sitemap is emitted at build time.
+export const dynamic = "force-static";
 
-const BASE = process.env.SITE_URL ?? "https://motocodex.net";
+const BASE = SITE_URL;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [bikes, manufacturers, news] = await Promise.all([getAllBikes(), getManufacturers(), getNews()]);

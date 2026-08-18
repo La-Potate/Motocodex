@@ -1,0 +1,80 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow the workflow to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never run two deploys at once; let a newer push cancel a queued one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The site is generated from SQLite at build time; the database is not
+      # committed, so create and seed it here.
+      - name: Create and seed the database
+        env:
+          DATABASE_URL: file:./dev.db
+        run: |
+          npx prisma generate
+          npx prisma db push --skip-generate
+          npx tsx prisma/seed.ts
+
+      - name: Resolve Pages URLs
+        id: urls
+        run: |
+          REPO="${{ github.event.repository.name }}"
+          OWNER="${{ github.repository_owner }}"
+          REPO_LC="${REPO,,}"
+          OWNER_LC="${OWNER,,}"
+          # A repo named <owner>.github.io is a user/org page served from the
+          # domain root, so it takes no path prefix. Everything else is a
+          # project page served from /<repo>/.
+          if [ "$REPO_LC" = "$OWNER_LC.github.io" ]; then
+            echo "base_path=" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://$OWNER_LC.github.io" >> "$GITHUB_OUTPUT"
+          else
+            echo "base_path=/$REPO" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://$OWNER_LC.github.io/$REPO" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build static site
+        env:
+          DATABASE_URL: file:./dev.db
+          NEXT_PUBLIC_BASE_PATH: ${{ steps.urls.outputs.base_path }}
+          SITE_URL: ${{ steps.urls.outputs.site_url }}
+        run: npm run build:static
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

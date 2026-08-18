@@ -4,7 +4,8 @@ import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/SiteFooter";
 import { JsonLd } from "@/components/JsonLd";
-import { organizationSchema, websiteSchema } from "@/lib/seo";
+import { organizationSchema, websiteSchema, SITE_URL } from "@/lib/seo";
+import { asset } from "@/lib/basePath";
 
 // Mona Sans (GitHub's variable typeface, MIT) — self-hosted from
 // @fontsource-variable/mona-sans so there's no external font request and no
@@ -18,7 +19,9 @@ const monaSans = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://motocodex.net"),
+  // Single source of truth: hardcoding this made every canonical URL disagree
+  // with the sitemap and JSON-LD whenever SITE_URL pointed somewhere else.
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Motocodex — Motorcycle Price in Bangladesh, Specs & Comparison",
     template: "%s · Motocodex",
@@ -38,10 +41,14 @@ export const metadata: Metadata = {
     description: "Compare motorcycles available in Bangladesh by engine, power, torque, mileage, weight and price (৳).",
     type: "website",
     siteName: "Motocodex",
-    images: ["/logo.png"],
+    images: [asset("/logo.png")],
   },
   robots: { index: true, follow: true },
-  icons: { icon: "/favicon.png", shortcut: "/favicon.png", apple: "/favicon.png" },
+  icons: {
+    icon: asset("/favicon.png"),
+    shortcut: asset("/favicon.png"),
+    apple: asset("/favicon.png"),
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

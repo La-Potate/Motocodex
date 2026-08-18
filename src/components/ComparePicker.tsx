@@ -30,7 +30,8 @@ export function ComparePicker({ bikes }: { bikes: PickerBike[] }) {
 
   const go = () => {
     if (selected.length < 2) return;
-    router.push(`/compare/${selected.join("-vs-")}`);
+    // Sorted so each set has one canonical URL that the static export pre-renders.
+    router.push(`/compare/${[...selected].sort().join("-vs-")}`);
   };
 
   const filtered = bikes.filter((b) =>

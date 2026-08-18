@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { BikeCard, type BikeCardData } from "./BikeCard";
 import { bdt } from "@/lib/format";
@@ -40,21 +41,27 @@ export function FilterPanel({
   initialQuery?: string;
   initialCategory?: string;
 }) {
+  // The page is statically exported, so ?q= / ?category= cannot be read on the
+  // server. Read them here instead, keeping the props as the default.
+  const params = useSearchParams();
+  const queryFromUrl = params.get("q") ?? initialQuery;
+  const categoryFromUrl = params.get("category") ?? initialCategory;
+
   const [maxCc, setMaxCc] = useState(bounds.cc.max);
   const [minCc, setMinCc] = useState(bounds.cc.min);
   const [maxPrice, setMaxPrice] = useState(bounds.price.max);
   const [activeBrands, setActiveBrands] = useState<Set<string>>(new Set());
   const [activeCats, setActiveCats] = useState<Set<string>>(
-    initialCategory ? new Set([initialCategory]) : new Set()
+    categoryFromUrl ? new Set([categoryFromUrl]) : new Set()
   );
-  const [q, setQ] = useState(initialQuery);
+  const [q, setQ] = useState(queryFromUrl);
   const [sort, setSort] = useState<keyof typeof SORTS>("power-desc");
 
   // Keep state in sync if the user navigates with new query params.
-  useEffect(() => setQ(initialQuery), [initialQuery]);
+  useEffect(() => setQ(queryFromUrl), [queryFromUrl]);
   useEffect(() => {
-    if (initialCategory) setActiveCats(new Set([initialCategory]));
-  }, [initialCategory]);
+    if (categoryFromUrl) setActiveCats(new Set([categoryFromUrl]));
+  }, [categoryFromUrl]);
 
   const toggle = (set: Set<string>, setter: (s: Set<string>) => void, value: string) => {
     const next = new Set(set);

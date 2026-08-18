@@ -2,7 +2,8 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/lib/useReducedMotionSafe";
 
 export type MegaMenuBike = {
   name: string;
@@ -23,7 +24,7 @@ export type MegaMenuData = Array<{
 }>;
 
 export function MegaMenu({ data }: { data: MegaMenuData }) {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotionSafe();
   const [open, setOpen] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(data[0]?.slug ?? null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,12 +50,28 @@ export function MegaMenu({ data }: { data: MegaMenuData }) {
     : [];
 
   return (
-    <div className="relative" onMouseEnter={onEnter} onMouseLeave={onLeave}>
+    <div
+      className="relative"
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && open) setOpen(false);
+      }}
+      // Hover alone leaves the panel unreachable by keyboard and touch, so the
+      // trigger also toggles on click and the panel closes when focus leaves.
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
       <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
         className={`flex items-center gap-1.5 rounded-sm px-3 py-2 transition-colors hover:bg-ink-200 hover:text-graphite-900 ${
           open ? "bg-ink-200 text-graphite-900" : ""
         }`}
         aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls="mega-menu-panel"
       >
         Manufacturers
         <motion.svg
@@ -69,6 +86,7 @@ export function MegaMenu({ data }: { data: MegaMenuData }) {
       <AnimatePresence>
         {open && (
           <motion.div
+            id="mega-menu-panel"
             initial={reduce ? false : { opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}

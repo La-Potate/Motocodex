@@ -5,14 +5,18 @@
  * exclusively from Server Components / Route Handlers, so the Prisma client,
  * the schema shape, and the raw queries are NEVER serialised into a client
  * bundle. The browser only ever receives the already-rendered HTML/RSC payload.
+ *
+ * Each query is wrapped in React's cache() so that generateMetadata() and the
+ * page body share one result per render instead of hitting the database twice.
  */
+import { cache } from "react";
 import { prisma } from "./db";
 import type { Bike, Manufacturer } from "@prisma/client";
 
 export type BikeWithManufacturer = Bike & { manufacturer: Manufacturer };
 
 /** All manufacturers with their bikes — powers the mega menu. */
-export async function getManufacturersWithBikes() {
+export const getManufacturersWithBikes = cache(async () => {
   return prisma.manufacturer.findMany({
     orderBy: { name: "asc" },
     include: {
@@ -22,43 +26,43 @@ export async function getManufacturersWithBikes() {
       },
     },
   });
-}
+});
 
 /** Lightweight manufacturer list (cards, footers). */
-export async function getManufacturers() {
+export const getManufacturers = cache(async () => {
   return prisma.manufacturer.findMany({
     orderBy: { name: "asc" },
     include: { _count: { select: { bikes: true } } },
   });
-}
+});
 
-export async function getManufacturerBySlug(slug: string) {
+export const getManufacturerBySlug = cache(async (slug: string) => {
   return prisma.manufacturer.findUnique({
     where: { slug },
     include: { bikes: { orderBy: [{ series: "asc" }, { engineCc: "desc" }] } },
   });
-}
+});
 
 /** A single bike resolved by manufacturer + model slug. */
-export async function getBike(manufacturerSlug: string, modelSlug: string) {
+export const getBike = cache(async (manufacturerSlug: string, modelSlug: string) => {
   return prisma.bike.findFirst({
     where: { slug: modelSlug, manufacturer: { slug: manufacturerSlug } },
     include: { manufacturer: true },
   });
-}
+});
 
 /** All bikes joined with their manufacturer — used by /find-your-bike and /compare. */
-export async function getAllBikes(): Promise<BikeWithManufacturer[]> {
+export const getAllBikes = cache(async (): Promise<BikeWithManufacturer[]> => {
   return prisma.bike.findMany({
     orderBy: [{ priceBdt: "asc" }],
     include: { manufacturer: true },
   });
-}
+});
 
 /** Resolve a single bike from a global "manufacturerSlug-modelSlug" combined token,
  * used by the /compare/[a-vs-b] route. We match against known slugs to avoid
  * ambiguity from hyphenated names. */
-export async function resolveBikeToken(token: string): Promise<BikeWithManufacturer | null> {
+export const resolveBikeToken = cache(async (token: string): Promise<BikeWithManufacturer | null> => {
   // Fast path: the token is "${manufacturerSlug}-${modelSlug}", but both parts can
   // themselves contain hyphens, so try every hyphen split position with a direct,
   // indexed query. This avoids a full-table scan for the common case.
@@ -87,28 +91,28 @@ export async function resolveBikeToken(token: string): Promise<BikeWithManufactu
   const byModel = all.filter((b) => b.slug === token);
   if (byModel.length === 1) return byModel[0];
   return null;
-}
+});
 
 /** Homepage helpers. */
-export async function getFeaturedBikes(limit = 6) {
+export const getFeaturedBikes = cache(async (limit = 6) => {
   return prisma.bike.findMany({
     orderBy: [{ powerHp: "desc" }],
     take: limit,
     include: { manufacturer: true },
   });
-}
+});
 
-export async function getCategorySummary() {
+export const getCategorySummary = cache(async () => {
   const grouped = await prisma.bike.groupBy({
     by: ["category"],
     _count: { category: true },
     orderBy: { _count: { category: "desc" } },
   });
   return grouped.map((g) => ({ category: g.category, count: g._count.category }));
-}
+});
 
 /** Min/max bounds for filter sliders. */
-export async function getFilterBounds() {
+export const getFilterBounds = cache(async () => {
   const agg = await prisma.bike.aggregate({
     _min: { engineCc: true, priceBdt: true },
     _max: { engineCc: true, priceBdt: true },
@@ -117,29 +121,29 @@ export async function getFilterBounds() {
     cc: { min: agg._min.engineCc ?? 0, max: agg._max.engineCc ?? 400 },
     price: { min: agg._min.priceBdt ?? 0, max: agg._max.priceBdt ?? 700000 },
   };
-}
+});
 
 /** News / blog articles. */
-export async function getNews() {
+export const getNews = cache(async () => {
   return prisma.news.findMany({ orderBy: { publishedAt: "desc" } });
-}
+});
 
-export async function getNewsBySlug(slug: string) {
+export const getNewsBySlug = cache(async (slug: string) => {
   return prisma.news.findUnique({ where: { slug } });
-}
+});
 
 /** Find an ownership/issues article for a specific model (for spec-page cross-links). */
-export async function getNewsForBike(manufacturerSlug: string, modelSlug: string) {
+export const getNewsForBike = cache(async (manufacturerSlug: string, modelSlug: string) => {
   return prisma.news.findFirst({
     where: { manufacturerSlug, bikeSlug: modelSlug },
   });
-}
+});
 
-export async function getStats() {
+export const getStats = cache(async () => {
   const [bikeCount, manufacturerCount, categories] = await Promise.all([
     prisma.bike.count(),
     prisma.manufacturer.count(),
     prisma.bike.findMany({ select: { category: true }, distinct: ["category"] }),
   ]);
   return { bikeCount, manufacturerCount, categoryCount: categories.length };
-}
+});

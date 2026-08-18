@@ -1,9 +1,17 @@
 import { ImageResponse } from "next/og";
-import { getNewsBySlug } from "@/lib/queries";
+import { getNewsBySlug, getNews } from "@/lib/queries";
 
 // Dynamic social card for each news article — branded, generated at request/build
 // time. Next wires this as the og:image + twitter:image for /news/[slug].
 export const runtime = "nodejs";
+// Static export has no server, so every card is rendered to a PNG at build time.
+export const dynamic = "force-static";
+
+export async function generateStaticParams() {
+  const news = await getNews();
+  return news.map((n) => ({ slug: n.slug }));
+}
+
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Motocodex article";

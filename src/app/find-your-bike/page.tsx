@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getAllBikes, getFilterBounds } from "@/lib/queries";
 import { FilterPanel, type FilterBike } from "@/components/FilterPanel";
@@ -14,12 +15,11 @@ export const metadata: Metadata = {
 
 // Server Component: the entire dataset is queried server-side and handed to the
 // client filter as a plain array. No API surface is exposed to scrapers.
-export default async function FindYourBikePage(
-  props: {
-    searchParams: Promise<{ q?: string; category?: string }>;
-  }
-) {
-  const searchParams = await props.searchParams;
+//
+// ?q= / ?category= are read inside FilterPanel rather than here: reading
+// searchParams on the server would force this page to render per-request, which
+// a static export cannot do.
+export default async function FindYourBikePage() {
   const [bikes, bounds] = await Promise.all([getAllBikes(), getFilterBounds()]);
 
   const data: FilterBike[] = bikes.map((b) => ({
@@ -35,6 +35,7 @@ export default async function FindYourBikePage(
     weightKg: b.weightKg,
     priceBdt: b.priceBdt,
     mileageKmpl: b.mileageKmpl,
+    imageUrl: b.imageUrl,
     imageHue: b.imageHue,
     tagline: b.tagline,
   }));
@@ -74,14 +75,10 @@ export default async function FindYourBikePage(
         </div>
       </div>
 
-      <FilterPanel
-        bikes={data}
-        bounds={bounds}
-        brands={brands}
-        categories={categories}
-        initialQuery={searchParams.q ?? ""}
-        initialCategory={searchParams.category ?? ""}
-      />
+      {/* useSearchParams() needs a Suspense boundary when prerendered. */}
+      <Suspense fallback={null}>
+        <FilterPanel bikes={data} bounds={bounds} brands={brands} categories={categories} />
+      </Suspense>
     </div>
   );
 }
