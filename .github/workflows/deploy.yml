@@ -64,7 +64,11 @@ jobs:
           SITE_URL: ${{ steps.urls.outputs.site_url }}
         run: npm run build:static
 
+      # Turns Pages on via the workflow's own token (permissions.pages: write
+      # above), so the site can be published without repo-admin access.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
