@@ -64,6 +64,20 @@ jobs:
           SITE_URL: ${{ steps.urls.outputs.site_url }}
         run: npm run build:static
 
+      # Next's RSC prefetch payload layout differs between platforms; a static
+      # host serves literal paths, so confirm the flat filenames the client
+      # actually requests are present in the export.
+      - name: Verify RSC prefetch payloads
+        run: |
+          NESTED=$(find out -type d -name '__next.*' | wc -l)
+          FLAT=$(find out -type f -name '__next.*.txt' | wc -l)
+          echo "nested __next.* directories : $NESTED"
+          echo "flat __next.*.txt files     : $FLAT"
+          echo "--- sample ---"
+          find out -type f -name '__next.*__PAGE__.txt' | head -3
+          if [ "$NESTED" -gt 0 ]; then echo "::error::nested payloads left unflattened"; exit 1; fi
+          if [ "$FLAT" -eq 0 ]; then echo "::error::no prefetch payloads emitted"; exit 1; fi
+
       # Turns Pages on via the workflow's own token (permissions.pages: write
       # above), so the site can be published without repo-admin access.
       - uses: actions/configure-pages@v5
