@@ -41,7 +41,10 @@ export const metadata: Metadata = {
     description: "Compare motorcycles available in Bangladesh by engine, power, torque, mileage, weight and price (৳).",
     type: "website",
     siteName: "Motocodex",
-    images: [asset("/logo.png")],
+    // Next already applies basePath to openGraph.images — wrapping it in asset()
+    // double-prefixed every social image. Icons below are NOT prefixed by Next,
+    // so those do still need it.
+    images: ["/logo.png"],
   },
   robots: { index: true, follow: true },
   icons: {

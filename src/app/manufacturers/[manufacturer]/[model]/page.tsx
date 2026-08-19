@@ -37,7 +37,8 @@ export async function generateMetadata(props: { params: Promise<Params> }): Prom
       title,
       description: `${bike.manufacturer.name} ${bike.name}: ${bits.join(", ")}.`,
       type: "website",
-      ...(bike.imageUrl ? { images: [{ url: asset(bike.imageUrl) }] } : {}),
+      // Next applies basePath to openGraph.images itself; do not pre-prefix.
+      ...(bike.imageUrl ? { images: [{ url: bike.imageUrl }] } : {}),
     },
   };
 }
